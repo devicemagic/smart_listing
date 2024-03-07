@@ -189,7 +189,12 @@ module SmartListing
 
     def set_param key, value, store = @params
       if store.is_a?(ActionDispatch::Cookies::CookieJar)
-        store["#{base_param}_#{param_names[key]}"] = value
+        store["#{base_param}_#{param_names[key]}"] = {
+          value: value,
+          httponly: true,
+          secure: true,
+          same_site: :strict
+        }
       else
         store[base_param] ||= {}
         store[base_param][param_names[key]] = value
