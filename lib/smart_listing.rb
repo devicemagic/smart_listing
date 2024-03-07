@@ -24,10 +24,6 @@ module SmartListing
     attr_reader :name, :collection, :options, :per_page, :sort, :page, :partial, :count, :params
     # Params that should not be visible in pagination links (pages, per-page, sorting, etc.)
     UNSAFE_PARAMS = [:authenticity_token, :commit, :utf8, :_method, :script_name].freeze
-    # For fast-check, like:
-    #   puts variable if ALLOWED_DIRECTIONS[variable]
-    ALLOWED_DIRECTIONS = Hash[['asc', 'desc', ''].map { |d| [d, true] }].freeze
-    private_constant :ALLOWED_DIRECTIONS
 
     def initialize name, collection, options = {}
       @name = name
@@ -204,24 +200,16 @@ module SmartListing
       sort = nil
 
       if @options[:sort_attributes] == :implicit
-        return sort if sort_params.blank?
-
-        sort_params.map do |attr, dir|
-          key = attr.to_s if @options[:array] || @collection.klass.attribute_method?(attr)
-          if key && ALLOWED_DIRECTIONS[dir.to_s]
-            sort ||= {}
-            sort[key] = dir.to_s
-          end
-        end
+        sort = sort_params.dup if sort_params.present?
       elsif @options[:sort_attributes]
         @options[:sort_attributes].each do |a|
           k, v = a
           if sort_params && sort_params[k.to_s]
-            dir = sort_params[k.to_s].to_s
+            dir = ["asc", "desc", ""].delete(sort_params[k.to_s])
 
-            if ALLOWED_DIRECTIONS[dir]
+            if dir
               sort ||= {}
-              sort[k] = dir.to_s
+              sort[k] = dir
             end
           end
         end
